@@ -1,22 +1,22 @@
 ''' Command-line based model for reordering calcite and dolomite by solid state exchange'''
 
 import ClumpyCool_func as cc
-import sys
+#import sys
 # sys.path.insert(0, '/Users/Max/Github/clumpy')
 import numpy as np
 import pandas as pd
 # import matplotlib as mpl
 # mpl.use('pdf')
 import matplotlib.pyplot as plt
-import matplotlib.mlab as mlab
-import matplotlib.patches as patches
+#import matplotlib.mlab as mlab
+#import matplotlib.patches as patches
 import os
-import random
-from scipy import optimize
-import pylab
+#import random
+#from scipy import optimize
+#import pylab
 # import CIDS_func as cf
-from scipy.integrate import odeint
-from scipy.optimize import leastsq
+#from scipy.integrate import odeint
+#from scipy.optimize import leastsq
 from scipy.interpolate import PchipInterpolator
 plt.style.use('ggplot')
 plt.close('all')
@@ -37,7 +37,7 @@ def fit_and_plot(T_t_points):
     fig.savefig('Model_T_t_path.pdf')
     return(time_array, T_t_fn)
 
-def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred):
+def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = 1.0):
     ''' fin to plot the results from the model'''
     fig, ax = plt.subplots(2, figsize = (6,8))
     fig1, ax1 = plt.subplots()
@@ -63,7 +63,7 @@ def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred):
     ax1.legend(loc = 'upper left')
     ax1.set_xlabel('Time (yrs)')
     ax1.set_ylabel(r'Temp $^{\circ}$C')
-    ax1.text(ax1.get_xlim()[1]-(ax1.get_xlim()[1]-ax1.get_xlim()[0])/8.0, ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])/20.0, r'$1\sigma$ err bars', size = 'small', alpha = 0.5)
+    ax1.text(ax1.get_xlim()[1]-(ax1.get_xlim()[1]-ax1.get_xlim()[0])/8.0, ax1.get_ylim()[0]+(ax1.get_ylim()[1]-ax1.get_ylim()[0])/20.0, r'{0}$\sigma$ err bars'.format(sigma_choice), size = 'small', alpha = 0.5)
 
     ax[0].legend(loc = 'best')
     ax[1].set_xlabel('Time (yrs)')
@@ -71,7 +71,7 @@ def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred):
 
     ax[0].set_ylabel(r'Temp $^{\circ}$C')
     ax[1].set_ylabel(r'$\Delta_{47,\regular{CDES25}} $ (‰)')
-    ax[1].text(ax[1].get_xlim()[1]-(ax[1].get_xlim()[1]-ax[1].get_xlim()[0])/8.0, ax[1].get_ylim()[0]+(ax[1].get_ylim()[1]-ax[1].get_ylim()[0])/20.0, r'$1\sigma$ err bars', size = 'small', alpha = 0.5)
+    ax[1].text(ax[1].get_xlim()[1]-(ax[1].get_xlim()[1]-ax[1].get_xlim()[0])/8.0, ax[1].get_ylim()[0]+(ax[1].get_ylim()[1]-ax[1].get_ylim()[0])/20.0, r'{0}$\sigma$ err bars'.format(sigma_choice), size = 'small', alpha = 0.5)
 
 
     plt.show()
@@ -90,9 +90,6 @@ def save_solutions(D47_pred, path_name):
     print('Done! ')
     return
 
-
-
-
 print('Welome to the ClumpyCool carbonate clumped isotope reordering model')
 while True:
     print('First, need a temperature--time path')
@@ -101,7 +98,7 @@ while True:
         print('Importing an excel sheet \n First column: time (in years) \n Second column: Temperature (in C) ')
         while True:
             path_name = input('Drag an excel spreadsheet with the T-t path constraints: ').strip()
-            path_name = path_name.strip('"')
+            path_name = path_name.strip("'").strip('"')
             path_name = os.path.abspath(path_name)
             acceptable_file_types = ('.xls', '.xlsx')
             if os.path.exists(path_name):
@@ -127,20 +124,24 @@ while True:
                             if mineral_choice_letter in mineral_choice_dict.keys():
                                 break
                             print('Invalid choice of mineral, please try again')
+                        while True:
+                            sigma_choice_str = input(' Choice of sigma error envelope? (default: 1.0) ')
+                            try:
+                                sigma_choice = np.float(sigma_choice_str)
+                                if sigma_choice <= 5.0:
+                                    break
+                                print('Invalid sigma choice: {0} is greater than 5.0'.format(sigma_choice))
+                            except(ValueError):
+                                sigma_choice = 1.0
+                                print('No sigma choice given, going with default (1.0)')
+                                break
                         print('\n Running models now...')
                         D47_pred = cc.model_wrapper_with_prompts(time_array, T_t_fn,
                         mineral_choice = mineral_choice_dict[mineral_choice_letter],
                         model_choice = model_choice_letter,
-                        sigma_choice = 1)
-
-                        # if mineral_choice_letter == 'B':
-                        #     D47_pred = cc.model_wrapper_with_prompts(time_array, T_t_fn, mineral_choice = 'both', sigma_choice = 1)
-                        # elif mineral_choice_letter == 'D':
-                        #     D47_pred = cc.model_wrapper_with_prompts(time_array, T_t_fn, mineral_choice = 'dolomite', sigma_choice = 1)
-                        # elif mineral_choice_letter == 'C':
-                        #     D47_pred = cc.model_wrapper_with_prompts(time_array, T_t_fn, mineral_choice = 'calcite', sigma_choice = 1)
+                        sigma_choice = sigma_choice)
                         print('\n Modeling complete. \n Plotting solutions now...')
-                        plot_solutions(T_t_points, T_t_fn, time_array, D47_pred)
+                        plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = sigma_choice)
                         print('\n Plotting complete. \n Now saving data...')
                         save_solutions(D47_pred, path_name)
                         print('\n Data save complete. ')
@@ -152,12 +153,7 @@ while True:
             else:
                 print('Nonexistent file, please try again ')
 
-
-
-
         break
-
-
 
     if task_choice == 'D':
         print('Selecting points on screen ')
