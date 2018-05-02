@@ -4,10 +4,8 @@ model type, bulk composition, etc'''
 
 import numpy as np
 import pandas as pd
-import random
 from scipy import optimize
 from scipy.integrate import odeint
-from scipy.interpolate import PchipInterpolator
 
 
 def temp_to_D47_ARF(T_C):
@@ -315,62 +313,4 @@ def model_wrapper_with_prompts(time_array, T_t_fn, mineral_choice = 'both', mode
         D47_pred = {'dolomite': D47_pred_dol}
     return(D47_pred)
 
-def monte_carlo_model_looper(T_t_points, model_iterations, mineral_choice = 'both', sigma_choice = 1):
-    rd = random.SystemRandom()
-    model_resoluion = 1e5
-    time_array = np.linspace(0, T_t_points['time_yrs'].max(), num = model_resoluion)
-    if mineral_choice == 'both':
-        dol_pred = []
-        cal_pred = []
-        for i in range(model_iterations):
-            print('Model numer {0}...'.format(i))
-            this_T_t_fn = monte_carlo_T_t_path(T_t_points)
-            this_D47_pred_dol, these_solution_details_dol = predict_D47(time_array, this_T_t_fn, temp_to_D47_ARF(this_T_t_fn(time_array[0])), model = 's', mineral = 'dolomite_sch', sigma_choice = sigma_choice)
-            this_D47_pred_cal, these_solution_details_cal = predict_D47(time_array, this_T_t_fn, temp_to_D47_ARF(this_T_t_fn(time_array[0])), model = 's', mineral = 'calcite', sigma_choice = sigma_choice)
-            dol_pred.append(this_D47_pred_dol)
-            cal_pred.append(this_D47_pred_cal)
-        D47_pred_MC = {'dolomite': dol_pred, 'calcite': cal_pred}
-    elif mineral_choice == 'calcite':
-        cal_pred = []
-        for i in range(model_iterations):
-            print('Model numer {0}...'.format(i))
-            this_T_t_fn = monte_carlo_T_t_path(T_t_points)
-            this_D47_pred_cal, these_solution_details_cal = predict_D47(time_array, this_T_t_fn, temp_to_D47_ARF(this_T_t_fn(time_array[0])), model = 's', mineral = 'calcite', sigma_choice = sigma_choice)
-            cal_pred.append(this_D47_pred_cal)
-        D47_pred_MC = {'calcite': cal_pred}
-    elif mineral_choice == 'dolomite':
-        dol_pred = []
-        for i in range(model_iterations):
-            print('Model numer {0}...'.format(i))
-            this_T_t_fn = monte_carlo_T_t_path(T_t_points)
-            this_D47_pred_dol, these_solution_details_dol = predict_D47(time_array, this_T_t_fn, temp_to_D47_ARF(this_T_t_fn(time_array[0])), model = 's', mineral = 'dolomite_sch', sigma_choice = sigma_choice)
-            dol_pred.append(this_D47_pred_dol)
-        D47_pred_MC = {'dolomite': dol_pred}
-    return(D47_pred_MC)
 
-def monte_carlo_T_t_path(T_t_points, rd_engine = random.SystemRandom()):
-    # generate random T-t path based on boxes
-    for line, row in T_t_points.iterrows():
-        row['time_rd'] = rd_engine.uniform(row['time_lower'], row['time_upper'])
-        row['temp_rd'] = rd_engine.uniform(row['temp_lower'], row['temp_upper'])
-    # fit T-t points to get fn
-    T_t_fn = PchipInterpolator(T_t_points['time_rd'], T_t_points['temp_rd'])
-    # return this fn
-    return(T_t_fn)
-
-def add_box_columns(T_t_points):
-    T_t_points['time_rd'] = T_t_points['time_yrs']
-    T_t_points['temp_rd'] = T_t_points['temp_C']
-    # get lower time limits here
-    T_t_points['time_lower'] = T_t_points['time_yrs'] - T_t_points['time_width_yrs']/2.0
-    # round up so that no negative times
-    T_t_points.loc[T_t_points['time_lower'] < 0, 'time_lower'] = 0.0
-    # get upper time limits here
-    T_t_points['time_upper'] = T_t_points['time_yrs'] + T_t_points['time_width_yrs']/2.0
-    # round down so that no times beyond predefined max time
-    T_t_points.loc[T_t_points['time_upper'] > T_t_points['time_yrs'].max(), 'time_upper'] = T_t_points['time_yrs'].max()
-    # Temp upper and lower
-    T_t_points['temp_lower'] = T_t_points['temp_C'] - T_t_points['temp_width_C']/2.0
-    T_t_points['temp_upper'] = T_t_points['temp_C'] + T_t_points['temp_width_C']/2.0
-
-    return(T_t_points)

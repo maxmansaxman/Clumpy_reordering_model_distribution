@@ -1,22 +1,10 @@
 ''' Command-line based model for reordering calcite and dolomite by solid state exchange'''
 
 import ClumpyCool_func as cc
-#import sys
-# sys.path.insert(0, '/Users/Max/Github/clumpy')
 import numpy as np
 import pandas as pd
-# import matplotlib as mpl
-# mpl.use('pdf')
 import matplotlib.pyplot as plt
-#import matplotlib.mlab as mlab
-#import matplotlib.patches as patches
 import os
-#import random
-#from scipy import optimize
-#import pylab
-# import CIDS_func as cf
-#from scipy.integrate import odeint
-#from scipy.optimize import leastsq
 from scipy.interpolate import PchipInterpolator
 plt.style.use('ggplot')
 plt.close('all')
