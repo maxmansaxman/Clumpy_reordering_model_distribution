@@ -317,7 +317,7 @@ def calculate_kd_kf(bulks, empirical_slope, Temp_here):
     n_adjacent = 6
     # pair equilibrium is an average of the two possible pair concentration eqns (13a or 13b)
     D47_equil = temp_to_D47_ARF(Temp_here)
-    D63_equil = D47_equil - temp_to_D47_ARF(1e6)
+    D63_equil = D47_equil - 0.268
     c63_equil = (D63_equil/1000 + 1)*bulks.c63_stoch
     pair_equilibrium = equil_pair_conc(bulks, empirical_slope, Temp_here)
     k_f_parameter = bulks.c60*c63_equil/pair_equilibrium
@@ -361,7 +361,7 @@ def concentration_conversion(d13C, d18O, D47_init):
     c62_stoch = 3*c12C*c18O*(c16O**2)
     c63_stoch = 3*c13C*c18O*(c16O**2)
 
-    D63_init = D47_init - temp_to_D47_ARF(1900) # for ARF
+    D63_init = D47_init - 0.2679 # for ARF
     c63_init = (D63_init/1000 + 1)*c63_stoch
     # assume that singly substituteds are stochastic. Required by the way we calculate D47
     c60, c61, c62 = (c60_stoch, c61_stoch, c62_stoch)
@@ -370,7 +370,7 @@ def concentration_conversion(d13C, d18O, D47_init):
 
 def rxn_progress_to_D47_ARF_explicit(rxn_progress_predicted, c63_init, c63_stoch):
     '''converts a rxn progess term to a D47_ARF. Assumes c63_init and c63_stoch are the same for all rows'''
-    D47_predicted = ((c63_init - rxn_progress_predicted)/c63_stoch-1)*1000+temp_to_D47_ARF(1900)
+    D47_predicted = ((c63_init - rxn_progress_predicted)/c63_stoch-1)*1000+ 0.268
     return(D47_predicted)
 
 def model_wrapper_with_prompts(time_array, T_t_fn, mineral_choice = 'both', model_choice = 's', sigma_choice = 1):
