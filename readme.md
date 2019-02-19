@@ -1,5 +1,5 @@
-#ClumpyCool
-##_a flexible program for modeling solid-state reordering of carbonate clumped isotopes_
+# ClumpyCool
+## _a flexible program for modeling solid-state reordering of carbonate clumped isotopes_
 ### Installation instructions
 1. Requirements: the Anaconda python distribution of python3 has all the packages and dependencies you'll need. Get it [here](https://www.anaconda.com/download/). Make sure to download & install python 3.x!
 2. Keep the two python files (.py) in the same folder. Your T-t path files need not be.
