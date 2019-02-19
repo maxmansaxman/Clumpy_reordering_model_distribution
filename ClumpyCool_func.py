@@ -19,7 +19,7 @@ def temp_to_D47_ARF(T_C):
 #    D = -5.85372e-3
     T_K = T_C+273.15
 #    K_eq = A/(T_K**4) + B/(T_K**3) + C/(T_K**2) + D/T_K + 1
-#    
+#
 #    D63_pred = (K_eq-1)*1000
 #    # empirical observation of kinetic isotope effect between D63 and D47_ARF_90C, from Bonifacie et al., 2017
 #    D47_ARF_90 = D63_pred + 0.176
@@ -118,18 +118,18 @@ def calculate_resolution_tolerances(times_yrs, time_temp_fn):
         else:
             tolerance = 1e-15
     return(tolerance)
-    
+
 
 def predict_D47(times_yrs, time_temp_fn, D47_init, model = 's', bulk_comp = [0,0], mineral = 'calcite', T_soak_choice = False, sigma_choice = 1):
     if model == 's':
         # actual weighted values, fit pairs
-        k_params_dict = {'calcite': np.array([20.1, 172.1, 24.7, 211.16, 0.0992]),'calcite_arf': np.array([20.1, 172.1, 24.7, 211.16, 0.0992]), 'calcite_ll': np.array([26.0, 204, 37.5, 290.16, 0.0903]),
+        k_params_dict = {'calcite': np.array([20.1, 172.1, 24.7, 211.16, 0.0992]),'calcite_arf': np.array([21.6, 180.1, 32.5, 260.3, 0.0944]), 'calcite_ll': np.array([26.0, 204, 37.5, 290.16, 0.0903]),
         'calcite_ll_new': np.array([31.1, 237, 32.9, 262.4, 0.0914]),'dolomite_bonifacie': np.array([21.5, 194.5, 31.8, 273.6, 0.0668]),
         'dolomite_sch_first': np.array([25.3, 220.1, 31.5, 275.3, 0.0766]), 'dolomite_sch': np.array([24.2, 214.0, 31.9, 278.8, 0.0720]),
         'dolomite_arf': np.array([24.2, 214.0, 31.9, 278.8, 0.0720]),'dolomite_ll': np.array([24.3, 212.7, 32.3, 278.7, 0.0685]),
         'dolomite_ll_first': np.array([22.6, 201.7, 33.1, 283.0, 0.0734]) }
 
-        k_sds_dict = {'calcite': np.array([0.7,5.0, 4.5, 30.0, 0.0]), 'calcite_arf': np.array([0.7,5.0, 4.5, 30.0, 0.0]),
+        k_sds_dict = {'calcite': np.array([0.7,5.0, 4.5, 30.0, 0.0]), 'calcite_arf': np.array([3.7,22.4, 1.0, 6.6, 0.0]),'calcite_arf_true': np.array([3.7,22.4, 1.0, 6.6, 0.0]),
         'calcite_ll': np.array([0.7,5.0, 4.5, 30.0, 0.0]), 'calcite_ll_new': np.array([6.3,37.2, 1.6, 10.3, 0.0]),
         'dolomite_bonifacie': np.array([1.08, 7.3, 2.3, 15.8, 0.0063]),'dolomite_sch_first': np.array([2.1, 13.5, 2.5, 16.3, 0.015]),
         'dolomite_sch': np.array([2.1, 13.5, 2.5, 16.3, 0.015]),'dolomite_arf': np.array([2.1, 13.5, 2.5, 16.3, 0.015]),
@@ -149,12 +149,16 @@ def predict_D47(times_yrs, time_temp_fn, D47_init, model = 's', bulk_comp = [0,0
 
     else:
         print('invalid model name')
-    
+
     # apply temperature predictions now
     # because newton-raphson method is inaccurate for D47_ARF values below 0.330, need to switch between methods
     pred_df['Temp_pred'] = pred_df['D47_pred'].apply(D47_to_temp_ARF)
     pred_df['Temp_true'] = pred_df['time_yrs'].apply(time_temp_fn)
+    # catch times when too fast, and error is thrown
     pred_df['Temp_pred_upper'] = pred_df['D47_pred_upper'].apply(D47_to_temp_ARF)
+    # turn all D47 values lower than 0.2 into fills based on what's around them
+    pred_df.loc[pred_df['D47_pred_lower']<0.20,'D47_pred_lower'] = np.nan
+    pred_df['D47_pred_lower'].interpolate(method = 'linear', inplace = True)
     pred_df['Temp_pred_lower'] = pred_df['D47_pred_lower'].apply(D47_to_temp_ARF)
     newton_raphson_cutoff = 0.330
     pred_df.loc[pred_df['D47_pred'] < newton_raphson_cutoff, 'Temp_pred'] = pred_df.loc[pred_df['D47_pred'] < newton_raphson_cutoff, 'D47_pred'].apply(D47_to_temp_ARF_long)
@@ -174,7 +178,7 @@ def predict_D47_s(times_yrs, time_temp_fn, D47_init, bulk_comp, kinetic_params, 
     k_sds_diff = np.copy(k_sds)
     #decide which errors to use
     if mineral == 'calcite':
-        cov_parameter = 0.27
+        cov_parameter = 0.0
         k_sds_exch[2:4] = k_sds[2:4]*cov_parameter
         k_sds_exch[4] = 0.0
         k_sds_diff[0:2] = k_sds[0:2]*cov_parameter
@@ -230,11 +234,11 @@ def predict_D47_s(times_yrs, time_temp_fn, D47_init, bulk_comp, kinetic_params, 
     this_df['D47_pred_lower'] = this_df.loc[:,['D47_pred_lower_diff', 'D47_pred_lower_exch', 'D47_pred_upper_diff', 'D47_pred_upper_exch','D47_pred']].min(axis = 1)
     this_df['pairs_pred_upper'] = pd.DataFrame(data = [ode_soln[0][1:,1], ode_soln_plus_diff[0][1:,1], ode_soln_minus_diff[0][1:,1], ode_soln_minus_exch[0][1:,1], ode_soln_plus_exch[0][1:,1]]).max(axis = 0)
     this_df['pairs_pred_lower'] = pd.DataFrame(data = [ode_soln[0][1:,1], ode_soln_plus_diff[0][1:,1], ode_soln_minus_diff[0][1:,1], ode_soln_minus_exch[0][1:,1], ode_soln_plus_exch[0][1:,1]]).min(axis = 0)
-  
+
     this_df['d_pairs_pred_upper'] = (this_df['pairs_pred_upper']/pairs_rd-1)*1000
     this_df['d_pairs_pred_lower'] = (this_df['pairs_pred_lower']/pairs_rd-1)*1000
 #    raise ValueError('A very specific bad thing happened.')
-    
+
     return(this_df, ode_soln)
 def predict_D47_p(times_yrs, time_temp_fn, D47_init, bulk_comp, kinetic_params, k_sds, sigma_choice, mineral, T_soak_ch = False):
     # predict D47 and pair concentration using passey and henkes model

@@ -49,7 +49,7 @@ def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = 1.0,
     ax[1].plot(T_t_points['time_yrs'], cc.temp_to_D47_ARF(T_t_points['temp_C']), 's', color = 'C3', label = 'Fixed points')
     ax[1].plot(time_array, cc.temp_to_D47_ARF(T_t_fn(time_array)), '-', color = 'C4', label = 'T-t fit')
 
-    color_dict = {'dolomite': 'C0', 'calcite': 'C1'}
+    color_dict = {'dolomite': 'C1', 'calcite': 'C0'}
     for key in D47_pred.keys():
         run_steps = D47_pred[key].shape[0]
         run_jumps = int(run_steps/1000)
@@ -80,7 +80,7 @@ def plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = 1.0,
         ax2[0].plot(T_t_points['time_yrs'], T_t_points['temp_C'], 's', color = 'C3', label = 'Fixed points')
         ax2[0].plot(time_array, T_t_fn(time_array), '-', color = 'C4', label = 'T-t fit')
 #        ax2[1].plot(time_array, T_t_fn(time_array), '-', color = 'C4', label = 'T-t fit')
-        
+
         for key in D47_pred.keys():
             run_steps = D47_pred[key].shape[0]
             run_jumps = int(run_steps/1000)
@@ -169,7 +169,7 @@ while True:
                         if model_choice_letter == 's':
                             plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = sigma_choice, pairs_plot = True)
                         else:
-                            plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = sigma_choice, pairs_plot = False)                         
+                            plot_solutions(T_t_points, T_t_fn, time_array, D47_pred, sigma_choice = sigma_choice, pairs_plot = False)
                         print('\n Plotting complete. \n Now saving data...')
                         save_solutions(D47_pred, path_name)
                         print('\n Data save complete. ')
