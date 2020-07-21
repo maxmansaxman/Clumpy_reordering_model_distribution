@@ -11,6 +11,7 @@
 
 ### Citation guide
 ClumpyCool has been "[published](https://osf.io/jyhsw/)" on the Open Science Framework, so it has its own DOI: 10.17605/OSF.IO/JYHSW
+
 That means it can be cited directly. 
 Example Chicago-style citation:
 
